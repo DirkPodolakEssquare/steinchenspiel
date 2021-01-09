@@ -1,0 +1,186 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>Steinchenspiel</title>
+</head>
+<body>
+<h1>essquare Steinchenspiel</h1>
+
+<canvas id="canvas" width="910" height="645" style="border: solid 2px black;"></canvas>
+
+<script>
+    // field (a)                            index (x)
+    // 00 01 02 03 04 05 06 07  row 0       00 01 02 03 04 05 06 07 (a = x)
+    // 08 09 10 11 12 13 14 15  row 1       15 14 13 12 11 10 09 08 (a = 23 - x)
+    // 16 17 18 19 20 21 22 23  row 2       24 25 26 27 28 29 30 31 (a = 8 + x)
+    // 24 25 26 27 28 29 30 31  row 3       23 22 21 20 19 18 17 16 (a = 47 - x)
+
+    const c = document.getElementById("canvas")
+    const ctx = c.getContext("2d")
+    const player0 = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    //const player0 = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15]
+    const player1 = [2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2]
+    //const player1 = [16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31]
+
+    ctx.textAlign = "center"
+    ctx.textBaseline = "middle"
+    ctx.font = "30px Arial"
+
+    const sleep = (ms) => {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    const drawField = (fieldIndex) => {
+        const yOffset = (fieldIndex < 16) ? 100 : 185
+        const indexX = fieldIndex % 8
+        const indexY = Math.floor(fieldIndex / 8)
+        const x = (indexX) * 110 + 70
+        const y = (indexY) * 120 + yOffset
+
+        ctx.fillStyle = "#ffffff"
+        ctx.beginPath()
+        ctx.arc(x, y, 50, 0, 2 * Math.PI)
+        ctx.fill()
+        ctx.fillStyle = "#000000"
+        ctx.beginPath()
+        ctx.arc(x, y, 50, 0, 2 * Math.PI)
+        ctx.stroke()
+
+        switch (indexY) {
+            case 0:
+                ctx.fillText(player0[indexX], x, y)
+                break;
+            case 1:
+                ctx.fillText(player0[15 - indexX], x, y)
+                break
+            case 2:
+                ctx.fillText(player1[8 + indexX], x, y)
+                break
+            case 3:
+                ctx.fillText(player1[7 - indexX], x, y)
+                break
+        }
+    }
+
+    const drawPlayground = () => {
+        // fields
+        for (let x = 0; x < 32; x++) {
+            drawField(x)
+        }
+
+        // player 1 upper arrow
+        ctx.fillStyle = "#000000"
+        ctx.beginPath()
+        ctx.fillRect(400, 15, 100, 10)
+        ctx.moveTo(515, 20)
+        ctx.lineTo(500, 10)
+        ctx.lineTo(500, 30)
+        ctx.fill()
+
+        // player 1 lower arrow
+        ctx.fillStyle = "#000000"
+        ctx.beginPath()
+        ctx.fillRect(410, 295, 100, 10)
+        ctx.moveTo(395, 300)
+        ctx.lineTo(410, 290)
+        ctx.lineTo(410, 310)
+        ctx.fill()
+
+        // separator
+        ctx.fillStyle = "#000000"
+        ctx.fillRect(0, 320, 1130, 5)
+
+        // player 2 upper arrow
+        ctx.fillStyle = "#000000"
+        ctx.beginPath()
+        ctx.fillRect(400, 340, 100, 10)
+        ctx.moveTo(515, 345)
+        ctx.lineTo(500, 335)
+        ctx.lineTo(500, 355)
+        ctx.fill()
+
+        // player 2 lower arrow
+        ctx.fillStyle = "#000000"
+        ctx.beginPath()
+        ctx.fillRect(410, 625, 100, 10)
+        ctx.moveTo(395, 630)
+        ctx.lineTo(410, 620)
+        ctx.lineTo(410, 640)
+        ctx.fill()
+    }
+
+    const chooseField = (chosenFieldIndex) => {
+        let chosenPlayerIndex
+        switch (Math.floor(chosenFieldIndex / 8)) {
+            case 0:
+                chosenPlayerIndex = chosenFieldIndex
+                break;
+            case 1:
+                chosenPlayerIndex = 23 - chosenFieldIndex
+                break
+            case 2:
+                chosenPlayerIndex = 8 + chosenFieldIndex
+                break
+            case 3:
+                chosenPlayerIndex = 47 - chosenFieldIndex
+                break
+        }
+
+
+        const player = (chosenFieldIndex < 16) ? player0 : player1
+        const amount = player[chosenPlayerIndex]
+        player[chosenPlayerIndex] = 0
+        drawField(chosenFieldIndex)
+        let updatePlayerIndex = chosenPlayerIndex + 1
+        for (let i = 0; i < amount; i++) {
+            if (updatePlayerIndex === 16) {
+                updatePlayerIndex = 0
+            }
+            player[updatePlayerIndex]++
+            drawField(updatePlayerIndex)
+            updatePlayerIndex++
+        }
+    }
+
+    const chooseFieldOld = (player, chosenFieldIndex) => {
+        const amount = player[chosenFieldIndex]
+        player[chosenFieldIndex] = 0
+        drawField(chosenFieldIndex)
+        let updateFieldIndex = chosenFieldIndex + 1
+        for (let i = 0; i < amount; i++) {
+            if (updateFieldIndex === 16) {
+                updateFieldIndex = 0
+            }
+            player[updateFieldIndex]++
+            drawField(updateFieldIndex)
+            updateFieldIndex++
+        }
+    }
+
+    drawPlayground()
+
+    const test = async () => {
+        await sleep(1000)
+        chooseField(player0, 2)
+        drawField(2)
+
+        await sleep(1000)
+        chooseField(player1, 5)
+        drawField(5)
+
+        await sleep(1000)
+        chooseField(player0, 3)
+        drawField(3)
+
+        await sleep(1000)
+        chooseField(player1, 7)
+        drawField(7)
+    }
+
+    test()
+</script>
+</body>
+</html>
